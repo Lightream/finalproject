@@ -1,0 +1,82 @@
+import numpy as np
+import random
+import matplotlib.pyplot as plt
+
+#################
+#initial
+Npart = 2 #particle number
+Nstep = 800 # steps
+dt = 0.01
+
+A = np.zeros((Npart,Nstep)) #Accelaration
+V = np.zeros((Npart,Nstep))  #Velocity
+X = np.zeros((Npart,Nstep))  #distance
+F = np.zeros((Npart,Nstep))  #force
+M = np.zeros(Npart)  #mass
+
+L = 36  #box boundary
+rcf = L/2  #cutoff
+
+#initial mass
+for i in range(Npart):
+    M[i] = 1
+    
+#initial X
+for i in range(Npart):
+    X[i,0] = np.random.uniform(0,L)
+##################
+#force 
+def force(i, m):
+    F = 0
+    for j in range (Npart):
+            r = abs(X[j,m]- X[i,m])
+            rn = L - abs(r) 
+            #choose the small one       
+            if rn < r:
+                r = rn 
+                if X[j,m]> X[i,m]:signf = 1
+                else: signf = 0        #if it is equal we need to see t-dt time 
+            else: 
+                if X[j,m]< X[i,m] :
+                    signf = 1
+                else:
+                    signf = 0
+
+            if (r < rcf and r>0) :  #cut off and boundry condition
+                r2 = r**2
+                r4 = r2**2
+                r6 = r2*r4
+                r12 = r6**2
+                r14 = r12 *r2
+                r8 = r6*r2
+                F += (-1)**(signf +1) * 4.0 *(12.0/r2 -6.0/r)
+            else: F += 0
+    return F
+   
+#################
+#integration of motion 
+def integra(i,m):
+        
+        A[i,m] = F[i,m]/ M[i]
+        V[i,m+1] = A[i,m]*dt +V[i,m]
+        Xnew = X[i,m] + V[i,m]*dt +A[i,m]*dt*dt/2
+        if Xnew > L : Xnew = Xnew - L
+        elif Xnew < 0 : Xnew = Xnew +L #boundary for X
+            
+        X[i,m+1] = Xnew
+        
+##################
+#main
+for m in range(Nstep-1):
+    #caculate force in time m for all particle
+    for i in range(Npart): #partcle be infulenced
+            F[i,m] = force(i,m)    
+            integra(i,m)
+
+test = np.arange(0,Nstep,1)
+plt.plot(test,X[1,],label='particle 2')
+plt.plot(test,X[0,],label='particle 1')
+plt.xlabel("time (dt = 0.01)")
+plt.ylabel("position")
+plt.legend()
+plt.show()
